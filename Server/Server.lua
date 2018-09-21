@@ -1,6 +1,6 @@
 --Update Check
 
-local LatestVersion = ''; CurrentVersion = '2.0.0'
+local LatestVersion = ''; CurrentVersion = '2.1.0'
 local GithubResourceName = 'VehicleExtraMenu'
 
 PerformHttpRequest('https://raw.githubusercontent.com/Flatracer/FiveM_Resources/master/' .. GithubResourceName .. '/VERSION', function(Error, NewestVersion, Header)

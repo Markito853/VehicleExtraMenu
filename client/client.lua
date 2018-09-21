@@ -1,6 +1,5 @@
 local AvailableExtras = {['VehicleExtras'] = {}, ['TrailerExtras'] = {}}
 local Items = {['Vehicle'] = {}, ['Trailer'] = {}}
-local GotTrailerExtras = false; GotVehicleExtras = false
 local Pool = MenuPool.New()
 local MainMenu = UIMenu.New('Vehicle Extras', '~b~Enable/Disable vehicle extras')
 local TrailerMenu, MenuExists, Vehicle, TrailerHandle, GotTrailer
@@ -30,15 +29,13 @@ Citizen.CreateThread(function() --Controls
 			MainMenu:Visible(not MainMenu:Visible())
 		end
 		
-		if MainMenu:Visible() and not IsInVehicle then
-			MainMenu:Visible(false)
-		end
-		
-		local Got, Handle = GetVehicleTrailerVehicle(Vehicle)
+		local CurrentVehicle = GetVehiclePedIsIn(PlayerPedId(), false)
+		local Got, Handle = GetVehicleTrailerVehicle(CurrentVehicle)
 
 		if IsInVehicle and not MenuExists then
-			VEM.CreateMenu()
-		elseif (not IsInVehicle and MenuExists) or Got ~= GotTrailer or Handle ~= TrailerHandle then
+			Vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
+			VEM.CreateMenu(Got, Handle)
+		elseif MenuExists and (not IsInVehicle or (TrailerMenu and not Got) or Handle ~= TrailerHandle or Vehicle ~= CurrentVehicle) then
 			VEM.DeleteMenu()
 		end
 	end
@@ -48,77 +45,73 @@ end)
 
 -- Functions [
 
-function VEM.CreateMenu()
-	Vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
-	GotTrailer, TrailerHandle = GetVehicleTrailerVehicle(Vehicle)
-	
+function VEM.CreateMenu(Got, Handle)
+	GotVehicleExtras = false
+	GotTrailerExtras = false
+	GotTrailer = Got
+	TrailerHandle = Handle
+
 	for ExtraID = 0, 20 do
 		if DoesExtraExist(Vehicle, ExtraID) then
 			AvailableExtras.VehicleExtras[ExtraID] = (IsVehicleExtraTurnedOn(Vehicle, ExtraID) == 1)
-			
 			GotVehicleExtras = true
 		end
 		
 		if GotTrailer and DoesExtraExist(TrailerHandle, ExtraID) then
-			AvailableExtras.TrailerExtras[ExtraID] = (IsVehicleExtraTurnedOn(TrailerHandle, ExtraID) == 1)
+			if not TrailerMenu then
+				TrailerMenu = Pool:AddSubMenu(MainMenu, 'Trailer Extras', '~b~Enable/Disable trailer extras')
+			end
 			
+			AvailableExtras.TrailerExtras[ExtraID] = (IsVehicleExtraTurnedOn(TrailerHandle, ExtraID) == 1)
 			GotTrailerExtras = true
 		end
-		
-		if not TrailerMenu then
-			for Key, Value in pairs(AvailableExtras.TrailerExtras) do
-				if Value then
-					TrailerMenu = Pool:AddSubMenu(MainMenu, 'Trailer Extras', '~b~Enable/Disable trailer extras')
-					break
-				end
-			end
-		end
 	end
-	
-	for Key, Value in pairs(AvailableExtras.VehicleExtras) do
-		local ExtraItem = UIMenuCheckboxItem.New('Extra ' .. Key, AvailableExtras.VehicleExtras[Key])
-		MainMenu:AddItem(ExtraItem)
-		Items.Vehicle[Key] = ExtraItem
-	end
-	
-    MainMenu.OnCheckboxChange = function(Sender, Item, Checked)
-		for Key, Value in pairs(Items.Vehicle) do
-			if Item == Value then
-				AvailableExtras.VehicleExtras[Key] = Checked
-				if AvailableExtras.VehicleExtras[Key] then
-					SetVehicleExtra(Vehicle, Key, 0)
-				else
-					SetVehicleExtra(Vehicle, Key, 1)
-				end
+
+	-- Vehicle Extras
+			for Key, Value in pairs(AvailableExtras.VehicleExtras) do
+				local ExtraItem = UIMenuCheckboxItem.New('Extra ' .. Key, AvailableExtras.VehicleExtras[Key])
+				MainMenu:AddItem(ExtraItem)
+				Items.Vehicle[Key] = ExtraItem
 			end
-		end
-    end
-	
-	if GotTrailerExtras then
-		for Key, Value in pairs(AvailableExtras.TrailerExtras) do
-			local ExtraItem = UIMenuCheckboxItem.New('Extra ' .. Key, AvailableExtras.TrailerExtras[Key])
-			TrailerMenu:AddItem(ExtraItem)
-			Items.Trailer[Key] = ExtraItem
-		end
-		
-		TrailerMenu.OnCheckboxChange = function(Sender, Item, Checked)
-			for Key, Value in pairs(Items.Trailer) do
-				if Item == Value then
-					AvailableExtras.TrailerExtras[Key] = Checked
-					local GotTrailer, TrailerHandle = GetVehicleTrailerVehicle(Vehicle)
-					if AvailableExtras.TrailerExtras[Key] then
-						SetVehicleExtra(TrailerHandle, Key, 0)
-					else
-						SetVehicleExtra(TrailerHandle, Key, 1)
+
+			MainMenu.OnCheckboxChange = function(Sender, Item, Checked)
+				for Key, Value in pairs(Items.Vehicle) do
+					if Item == Value then
+						AvailableExtras.VehicleExtras[Key] = Checked
+						if AvailableExtras.VehicleExtras[Key] then
+							SetVehicleExtra(Vehicle, Key, 0)
+						else
+							SetVehicleExtra(Vehicle, Key, 1)
+						end
 					end
 				end
 			end
-		end
-	end
-	
+
+	-- Trailer Extras
+			if GotTrailerExtras then
+				for Key, Value in pairs(AvailableExtras.TrailerExtras) do
+					local ExtraItem = UIMenuCheckboxItem.New('Extra ' .. Key, AvailableExtras.TrailerExtras[Key])
+					TrailerMenu:AddItem(ExtraItem)
+					Items.Trailer[Key] = ExtraItem
+				end
+
+				TrailerMenu.OnCheckboxChange = function(Sender, Item, Checked)
+					for Key, Value in pairs(Items.Trailer) do
+						if Item == Value then
+							AvailableExtras.TrailerExtras[Key] = Checked
+							local GotTrailer, TrailerHandle = GetVehicleTrailerVehicle(Vehicle)
+							if AvailableExtras.TrailerExtras[Key] then
+								SetVehicleExtra(TrailerHandle, Key, 0)
+							else
+								SetVehicleExtra(TrailerHandle, Key, 1)
+							end
+						end
+					end
+				end
+			end
+
 	if GotVehicleExtras or GotTrailerExtras then
 		Pool:RefreshIndex()
-
 		MenuExists = true
 	end
 end
@@ -127,12 +120,17 @@ function VEM.DeleteMenu()
 	Vehicle = nil
 	AvailableExtras = {['VehicleExtras'] = {}, ['TrailerExtras'] = {}}
 	Items = {['Vehicle'] = {}, ['Trailer'] = {}}
-	if MainMenu then
-		MainMenu:Clear()
-	end
 	if TrailerMenu then
 		TrailerMenu:Clear()
 	end
+	TrailerMenu = nil
+	if MainMenu then
+		if MainMenu:Visible() then
+			MainMenu:Visible(false)
+		end
+		MainMenu:Clear()
+	end
+	Pool:Clear()
 	Pool:Remove()
 	MenuExists = false
 end

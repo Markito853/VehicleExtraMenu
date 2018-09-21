@@ -19,4 +19,3 @@ server_script {
 }
 
 -- Vehicle Extra Menu Made By: FlatracerMOD (aka Flatracer)
--- Source Made By: MrDaGree (aka TylerMcGrubber)
