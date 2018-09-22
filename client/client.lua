@@ -1,9 +1,9 @@
 local AvailableExtras = {['VehicleExtras'] = {}, ['TrailerExtras'] = {}}
 local Items = {['Vehicle'] = {}, ['Trailer'] = {}}
-local Pool = MenuPool.New()
+local Menupool = MenuPool.New()
 local MainMenu = UIMenu.New('Vehicle Extras', '~b~Enable/Disable vehicle extras')
-local TrailerMenu, MenuExists, Vehicle, TrailerHandle, GotTrailer
-Pool:Add(MainMenu)
+local TrailerMenu, MenuExists, Vehicle, TrailerHandle, GotTrailer, DeletingMenu
+Menupool:Add(MainMenu)
 
 -- Actual Menu [
 
@@ -21,7 +21,9 @@ Citizen.CreateThread(function() --Controls
 	while true do
 		Citizen.Wait(0)
 
-        Pool:ProcessMenus()
+		if not DeletingMenu then
+			Menupool:ProcessMenus()
+		end
 		
 		local IsInVehicle = IsPedInAnyVehicle(PlayerPedId(), false)
 
@@ -32,7 +34,7 @@ Citizen.CreateThread(function() --Controls
 		local CurrentVehicle = GetVehiclePedIsIn(PlayerPedId(), false)
 		local Got, Handle = GetVehicleTrailerVehicle(CurrentVehicle)
 
-		if IsInVehicle and not MenuExists then
+		if not MenuExists and IsInVehicle then
 			Vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
 			VEM.CreateMenu(Got, Handle)
 		elseif MenuExists and (not IsInVehicle or (TrailerMenu and not Got) or Handle ~= TrailerHandle or Vehicle ~= CurrentVehicle) then
@@ -59,7 +61,7 @@ function VEM.CreateMenu(Got, Handle)
 		
 		if GotTrailer and DoesExtraExist(TrailerHandle, ExtraID) then
 			if not TrailerMenu then
-				TrailerMenu = Pool:AddSubMenu(MainMenu, 'Trailer Extras', '~b~Enable/Disable trailer extras')
+				TrailerMenu = Menupool:AddSubMenu(MainMenu, 'Trailer Extras', '~b~Enable/Disable trailer extras')
 			end
 			
 			AvailableExtras.TrailerExtras[ExtraID] = (IsVehicleExtraTurnedOn(TrailerHandle, ExtraID) == 1)
@@ -111,28 +113,22 @@ function VEM.CreateMenu(Got, Handle)
 			end
 
 	if GotVehicleExtras or GotTrailerExtras then
-		Pool:RefreshIndex()
+		Menupool:RefreshIndex()
 		MenuExists = true
 	end
 end
 
 function VEM.DeleteMenu()
+	DeletingMenu = true
 	Vehicle = nil
 	AvailableExtras = {['VehicleExtras'] = {}, ['TrailerExtras'] = {}}
 	Items = {['Vehicle'] = {}, ['Trailer'] = {}}
-	if TrailerMenu then
-		TrailerMenu:Clear()
-	end
-	TrailerMenu = nil
-	if MainMenu then
-		if MainMenu:Visible() then
-			MainMenu:Visible(false)
-		end
-		MainMenu:Clear()
-	end
-	Pool:Clear()
-	Pool:Remove()
+
+	Menupool = MenuPool.New()
+	MainMenu = UIMenu.New('Vehicle Extras', '~b~Enable/Disable vehicle extras')
+	Menupool:Add(MainMenu)
 	MenuExists = false
+	DeletingMenu = false
 end
 
 function VEM.CheckStuff()

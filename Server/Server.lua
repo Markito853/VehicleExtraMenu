@@ -1,6 +1,6 @@
 --Update Check
 
-local LatestVersion = ''; CurrentVersion = '2.1.0'
+local LatestVersion = ''; CurrentVersion = '2.1.1'
 local GithubResourceName = 'VehicleExtraMenu'
 
 PerformHttpRequest('https://raw.githubusercontent.com/Flatracer/FiveM_Resources/master/' .. GithubResourceName .. '/VERSION', function(Error, NewestVersion, Header)
@@ -28,14 +28,14 @@ PerformHttpRequest('https://raw.githubusercontent.com/Flatracer/FiveM_Resources/
 end)
 
 RegisterCommand('DownloadVEM', function()
-	if CurrentVersion ~= LatestVersion then
+	if IsDuplicityVersion() and CurrentVersion ~= LatestVersion then
 		if os.getenv('HOME') then
-			os.execute('open https://forum.fivem.net/t/release-1-2-1-vehicle-extra-menu/39809')
+			os.execute('open https://forum.fivem.net/t/release-vehicle-extra-menu/39809')
 		else
-			os.execute('start https://forum.fivem.net/t/release-1-2-1-vehicle-extra-menu/39809')
+			os.execute('start https://forum.fivem.net/t/release-vehicle-extra-menu/39809')
 		end
 	end
-end)
+end, true)
 
 --Admin Check
 
