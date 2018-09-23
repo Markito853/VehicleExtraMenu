@@ -27,15 +27,15 @@ PerformHttpRequest('https://raw.githubusercontent.com/Flatracer/FiveM_Resources/
 	end)
 end)
 
-RegisterCommand('DownloadVEM', function()
-	if IsDuplicityVersion() and CurrentVersion ~= LatestVersion then
+AddEventHandler('rconCommand', function(Name, Arguments)
+	if Name == 'DownloadVEM' and CurrentVersion ~= LatestVersion then
 		if os.getenv('HOME') then
 			os.execute('open https://forum.fivem.net/t/release-vehicle-extra-menu/39809')
 		else
 			os.execute('start https://forum.fivem.net/t/release-vehicle-extra-menu/39809')
 		end
 	end
-end, true)
+end)
 
 --Admin Check
 
