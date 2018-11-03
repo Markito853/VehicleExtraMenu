@@ -70,20 +70,24 @@ function VEM.CreateMenu(Got, Handle)
 	end
 
 	-- Vehicle Extras
-			for Key, Value in pairs(AvailableExtras.VehicleExtras) do
-				local ExtraItem = UIMenuCheckboxItem.New('Extra ' .. Key, AvailableExtras.VehicleExtras[Key])
-				MainMenu:AddItem(ExtraItem)
-				Items.Vehicle[Key] = ExtraItem
-			end
+			if GotVehicleExtras then
+				SetVehicleAutoRepairDisabled(Vehicle, VEM.DisableAutoRepair)
+				
+				for Key, Value in pairs(AvailableExtras.VehicleExtras) do
+					local ExtraItem = UIMenuCheckboxItem.New('Extra ' .. Key, AvailableExtras.VehicleExtras[Key])
+					MainMenu:AddItem(ExtraItem)
+					Items.Vehicle[Key] = ExtraItem
+				end
 
-			MainMenu.OnCheckboxChange = function(Sender, Item, Checked)
-				for Key, Value in pairs(Items.Vehicle) do
-					if Item == Value then
-						AvailableExtras.VehicleExtras[Key] = Checked
-						if AvailableExtras.VehicleExtras[Key] then
-							SetVehicleExtra(Vehicle, Key, 0)
-						else
-							SetVehicleExtra(Vehicle, Key, 1)
+				MainMenu.OnCheckboxChange = function(Sender, Item, Checked)
+					for Key, Value in pairs(Items.Vehicle) do
+						if Item == Value then
+							AvailableExtras.VehicleExtras[Key] = Checked
+							if AvailableExtras.VehicleExtras[Key] then
+								SetVehicleExtra(Vehicle, Key, 0)
+							else
+								SetVehicleExtra(Vehicle, Key, 1)
+							end
 						end
 					end
 				end
@@ -91,6 +95,8 @@ function VEM.CreateMenu(Got, Handle)
 
 	-- Trailer Extras
 			if GotTrailerExtras then
+				SetVehicleAutoRepairDisabled(TrailerHandle, VEM.DisableAutoRepair)
+				
 				for Key, Value in pairs(AvailableExtras.TrailerExtras) do
 					local ExtraItem = UIMenuCheckboxItem.New('Extra ' .. Key, AvailableExtras.TrailerExtras[Key])
 					TrailerMenu:AddItem(ExtraItem)
